@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فورمة المصاريف</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000);
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .status {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3 style="text-align: center;">إدخال وصل جديد 🧾</h3>
+    
+    <input type="text" id="name" placeholder="اسم المستلم / الجهة" required>
+    <input type="number" id="amount" placeholder="المبلغ (بالدينار)" required>
+    <textarea id="details" rows="3" placeholder="تفاصيل الصرف..." required></textarea>
+    
+    <label style="display:block; margin-top:10px;">صورة الوصل:</label>
+    <input type="file" id="photo" accept="image/*" required>
+
+    <button onclick="sendData()" id="btn">إرسال 📤</button>
+    <p class="status" id="status">جاري الإرسال...</p>
+</div>
+
+<script>
+    // ==========================================
+    // 🔴 بس هنا غير المعلومات مالتك
+    const BOT_TOKEN = "8134873765:AAFUo-nFXTbmN4_KC2NQQbMXjfEFUxO2s_o"; 
+    const CHAT_ID = "5762584781"; 
+    // ==========================================
+
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // يفتح النافذة على كبر الشاشة
+
+    function sendData() {
+        const name = document.getElementById("name").value;
+        const amount = document.getElementById("amount").value;
+        const details = document.getElementById("details").value;
+        const photoInput = document.getElementById("photo").files[0];
+        const btn = document.getElementById("btn");
+        const status = document.getElementById("status");
+
+        if (!name || !amount || !photoInput) {
+            tg.showAlert("يرجى ملء كافة الحقول واختيار صورة!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "جاري الرفع...";
+        status.style.display = "block";
+
+        const formData = new FormData();
+        formData.append("chat_id", CHAT_ID);
+        formData.append("caption", `🧾 *وصل جديد*\n\n👤 *الاسم:* ${name}\n💰 *المبلغ:* ${amount}\n📝 *التفاصيل:* ${details}`);
+        formData.append("photo", photoInput);
+        formData.append("parse_mode", "Markdown");
+
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                tg.showAlert("تم الإرسال بنجاح! ✅");
+                tg.close(); // يسد النافذة بعد الإرسال
+            } else {
+                alert("خطأ: " + data.description);
+                btn.disabled = false;
+                btn.innerText = "إرسال 📤";
+            }
+        })
+        .catch(err => {
+            alert("فشل الاتصال: " + err);
+            btn.disabled = false;
+            btn.innerText = "إرسال 📤";
+        });
+    }
+</script>
+
+</body>
+</html>
