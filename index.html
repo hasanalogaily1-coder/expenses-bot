@@ -18,62 +18,44 @@
         }
         .container { width: 100%; max-width: 400px; }
         
-        /* تصميم الأزرار الرئيسية */
+        /* القائمة الرئيسية */
         .menu-btn {
-            width: 100%;
-            padding: 15px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            color: white;
-            transition: transform 0.1s;
+            width: 100%; padding: 15px; margin: 8px 0;
+            border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            color: white; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .menu-btn:active { transform: scale(0.98); }
-        
-        /* ألوان الأزرار */
-        .btn-expense { background-color: #e74c3c; } /* أحمر للمصاريف */
-        .btn-income { background-color: #2ecc71; } /* أخضر للقبض */
-        .btn-bank { background-color: #3498db; }   /* أزرق للمصرف */
-        .btn-contract { background-color: #f39c12; } /* برتقالي للعقود */
+        .btn-contract { background-color: #f39c12; }
+        .btn-receipt { background-color: #2ecc71; }
+        .btn-bank { background-color: #3498db; }
+        .btn-expense { background-color: #e74c3c; }
 
-        /* تصميم الفورمة */
+        /* الحقول */
         .form-section { display: none; width: 100%; }
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        .input-group { margin-bottom: 12px; display: none; }
+        
+        label { font-weight: bold; font-size: 14px; margin-bottom: 5px; display: block; color: var(--tg-theme-hint-color, #555); }
+        input, select, textarea {
+            width: 100%; padding: 12px;
+            border: 1px solid #ccc; border-radius: 8px;
             box-sizing: border-box;
             background-color: var(--tg-theme-secondary-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000);
-        }
-        .submit-btn {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: white;
-            border: none;
-            border-radius: 8px;
             font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+        }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #2481cc; border-color: transparent; }
+
+        .submit-btn {
+            width: 100%; padding: 14px; margin-top: 20px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: white; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
         }
         .back-btn {
-            background: none;
-            border: none;
-            color: var(--tg-theme-hint-color, #999);
-            margin-bottom: 15px;
-            cursor: pointer;
-            font-size: 14px;
+            background: none; border: none; color: #777;
+            margin-bottom: 10px; cursor: pointer; font-size: 14px;
+            display: flex; align-items: center;
         }
     </style>
 </head>
@@ -83,106 +65,258 @@
     
     <div id="mainMenu">
         <h3 style="text-align: center; margin-bottom: 20px;">اختر نوع العملية 👇</h3>
-        <button class="menu-btn btn-expense" onclick="openForm('مصاريف 💸', '#صرف')">مصاريف 💸</button>
-        <button class="menu-btn btn-income" onclick="openForm('سند قبض 📥', '#قبض')">سند قبض 📥</button>
-        <button class="menu-btn btn-bank" onclick="openForm('إيداع مصرفي 🏦', '#مصرف')">مصرف 🏦</button>
-        <button class="menu-btn btn-contract" onclick="openForm('عقد جديد 📄', '#عقد')">عقود 📄</button>
+        <button class="menu-btn btn-contract" onclick="setupForm('contract')">عقد جديد 📄</button>
+        <button class="menu-btn btn-receipt" onclick="setupForm('receipt')">وصل قبض 📥</button>
+        <button class="menu-btn btn-bank" onclick="setupForm('bank')">وصل مصرف 🏦</button>
+        <button class="menu-btn btn-expense" onclick="setupForm('expense')">مصاريف 💸</button>
     </div>
 
     <div id="formSection" class="form-section">
         <button class="back-btn" onclick="showMenu()">🔙 رجوع للقائمة</button>
-        <h3 id="formTitle" style="text-align: center;">تسجيل بيانات</h3>
+        <h3 id="formTitle" style="text-align: center; margin-bottom: 15px;"></h3>
         
-        <input type="hidden" id="entryType"> <input type="text" id="name" placeholder="الاسم / الجهة" required>
-        <input type="number" id="amount" placeholder="المبلغ" required>
-        <textarea id="details" rows="3" placeholder="التفاصيل والملاحظات..." required></textarea>
-        
-        <label style="display:block; margin-top:10px;">إرفاق صورة (اختياري):</label>
-        <input type="file" id="photo" accept="image/*">
+        <div class="input-group" id="grp_type">
+            <label>نوع العملية:</label>
+            <select id="transactionType"></select>
+        </div>
+
+        <div class="input-group" id="grp_contractNum">
+            <label>رقم العقد:</label>
+            <input type="number" id="contractNum" placeholder="مثلاً: 105">
+        </div>
+
+        <div class="input-group" id="grp_receiptNum">
+            <label id="lbl_receiptNum">رقم الوصل:</label>
+            <input type="number" id="receiptNum">
+        </div>
+
+        <div class="input-group" id="grp_houseNum">
+            <label id="lbl_houseNum">رقم الدار:</label>
+            <input type="number" id="houseNum">
+        </div>
+
+        <div class="input-group" id="grp_name">
+            <label>الاسم:</label>
+            <input type="text" id="name">
+        </div>
+
+        <div class="input-group" id="grp_contractDetails">
+            <label>المقدمة:</label>
+            <input type="number" id="downPayment">
+            <label style="margin-top:10px;">السعر الكلي:</label>
+            <input type="number" id="totalPrice">
+        </div>
+
+        <div class="input-group" id="grp_amount">
+            <label>المبلغ:</label>
+            <input type="number" id="amount">
+        </div>
+
+        <div class="input-group" id="grp_reason">
+            <label>سبب الصرف:</label>
+            <textarea id="reason" rows="2"></textarea>
+        </div>
+
+        <div class="input-group" id="grp_date" style="display:block;">
+            <label>التاريخ:</label>
+            <input type="date" id="date">
+        </div>
+
+        <div class="input-group" id="grp_photo" style="display:block;">
+            <label>صورة الوصل/العقد:</label>
+            <input type="file" id="photo" accept="image/*">
+        </div>
 
         <button class="submit-btn" onclick="sendData()" id="btn">إرسال 📤</button>
-        <p id="status" style="text-align: center; display: none; margin-top: 10px;">جاري الإرسال...</p>
+        <p id="status" style="text-align: center; display: none; margin-top: 10px; color: #666;">جاري الرفع...</p>
     </div>
 
 </div>
 
 <script>
     // ==========================================
-    // 🔴 عدل هنا بس
+    // معلومات البوت الخاصة بك
     const BOT_TOKEN = "8134873765:AAFUo-nFXTbmN4_KC2NQQbMXjfEFUxO2s_o"; 
     const CHAT_ID = "5762584781"; 
     // ==========================================
 
+    let currentType = '';
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // دالة فتح الفورمة وتغيير العنوان حسب الزر
-    function openForm(title, typeTag) {
-        document.getElementById('mainMenu').style.display = 'none';
-        document.getElementById('formSection').style.display = 'block';
-        document.getElementById('formTitle').innerText = title;
-        document.getElementById('entryType').value = typeTag; // نخزن نوع العملية
-        
-        // تفريغ الحقول القديمة
-        document.getElementById('name').value = '';
-        document.getElementById('amount').value = '';
-        document.getElementById('details').value = '';
-        document.getElementById('photo').value = '';
-    }
+    // تعيين تاريخ اليوم افتراضياً
+    document.getElementById('date').valueAsDate = new Date();
 
-    // دالة الرجوع للقائمة
     function showMenu() {
         document.getElementById('formSection').style.display = 'none';
         document.getElementById('mainMenu').style.display = 'block';
     }
 
-    // دالة الإرسال
-    function sendData() {
-        const typeTag = document.getElementById('entryType').value;
-        const name = document.getElementById('name').value;
-        const amount = document.getElementById('amount').value;
-        const details = document.getElementById('details').value;
-        const photoInput = document.getElementById("photo").files[0];
-        const btn = document.getElementById("btn");
-        const status = document.getElementById("status");
+    function hideAllFields() {
+        const groups = document.querySelectorAll('.input-group');
+        groups.forEach(g => { 
+            if(g.id !== 'grp_date' && g.id !== 'grp_photo') g.style.display = 'none'; 
+        });
+    }
 
-        if (!name || !amount) {
-            tg.showAlert("يرجى كتابة الاسم والمبلغ على الأقل!");
-            return;
+    function setupForm(type) {
+        currentType = type;
+        hideAllFields();
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('formSection').style.display = 'block';
+        
+        // تصفير الحقول ما عدا التاريخ
+        document.querySelectorAll('input, textarea').forEach(i => {
+            if(i.id !== 'date' && i.type !== 'file') i.value = '';
+        });
+
+        const title = document.getElementById('formTitle');
+        const typeSelect = document.getElementById('transactionType');
+
+        // إعداد الحقول حسب النوع
+        if (type === 'contract') {
+            title.innerText = 'عقد جديد 📄';
+            document.getElementById('grp_contractNum').style.display = 'block';
+            document.getElementById('grp_houseNum').style.display = 'block';
+            document.getElementById('lbl_houseNum').innerText = "رقم الدار (مطلوب):";
+            document.getElementById('grp_name').style.display = 'block';
+            document.getElementById('grp_contractDetails').style.display = 'block'; // مقدمة وسعر كلي
+
+        } else if (type === 'receipt') {
+            title.innerText = 'وصل قبض 📥';
+            document.getElementById('grp_type').style.display = 'block';
+            typeSelect.innerHTML = '<option value="قسط">قسط</option><option value="دفعة">دفعة</option>';
+            document.getElementById('grp_receiptNum').style.display = 'block';
+            document.getElementById('lbl_receiptNum').innerText = "رقم الوصل (مطلوب):";
+            document.getElementById('grp_houseNum').style.display = 'block';
+            document.getElementById('lbl_houseNum').innerText = "رقم الدار (مطلوب):";
+            document.getElementById('grp_name').style.display = 'block';
+            document.getElementById('grp_amount').style.display = 'block';
+
+        } else if (type === 'bank') {
+            title.innerText = 'وصل مصرف 🏦';
+            document.getElementById('grp_type').style.display = 'block';
+            typeSelect.innerHTML = '<option value="محامي">محامي</option><option value="عمولة">عمولة</option><option value="قرض">قرض</option>';
+            document.getElementById('grp_receiptNum').style.display = 'block';
+            document.getElementById('lbl_receiptNum').innerText = "رقم الوصل (اختياري):";
+            document.getElementById('grp_houseNum').style.display = 'block';
+            document.getElementById('lbl_houseNum').innerText = "رقم الدار (مطلوب):";
+            document.getElementById('grp_name').style.display = 'block';
+            document.getElementById('grp_amount').style.display = 'block';
+
+        } else if (type === 'expense') {
+            title.innerText = 'وصل مصاريف 💸';
+            document.getElementById('grp_houseNum').style.display = 'block';
+            document.getElementById('lbl_houseNum').innerText = "رقم الدار (اختياري):";
+            document.getElementById('grp_name').style.display = 'block';
+            document.getElementById('grp_reason').style.display = 'block';
+            document.getElementById('grp_amount').style.display = 'block';
+        }
+    }
+
+    function sendData() {
+        const photoInput = document.getElementById("photo").files[0];
+        const date = document.getElementById("date").value;
+        const name = document.getElementById("name").value;
+        
+        if (!photoInput) { tg.showAlert("يرجى إرفاق صورة!"); return; }
+        if (!name) { tg.showAlert("يرجى كتابة الاسم!"); return; }
+
+        let caption = "";
+
+        // بناء الرسالة حسب النوع
+        if (currentType === 'contract') {
+            const cNum = document.getElementById('contractNum').value;
+            const hNum = document.getElementById('houseNum').value;
+            const down = document.getElementById('downPayment').value;
+            const total = document.getElementById('totalPrice').value;
+            
+            if(!cNum || !hNum || !down || !total) { tg.showAlert("أكمل جميع الحقول!"); return; }
+            
+            caption = `📄 *عقد جديد*\n\n` +
+                      `🔢 *رقم العقد:* ${cNum}\n` +
+                      `🏠 *رقم الدار:* ${hNum}\n` +
+                      `👤 *الاسم:* ${name}\n` +
+                      `💰 *المقدمة:* ${down}\n` +
+                      `💵 *السعر الكلي:* ${total}\n` +
+                      `📅 *التاريخ:* ${date}`;
+
+        } else if (currentType === 'receipt') {
+            const type = document.getElementById('transactionType').value;
+            const rNum = document.getElementById('receiptNum').value;
+            const hNum = document.getElementById('houseNum').value;
+            const amount = document.getElementById('amount').value;
+            
+            if(!rNum || !hNum || !amount) { tg.showAlert("أكمل جميع الحقول!"); return; }
+
+            caption = `📥 *وصل قبض*\n\n` +
+                      `📌 *النوع:* ${type}\n` +
+                      `🔢 *رقم الوصل:* ${rNum}\n` +
+                      `🏠 *رقم الدار:* ${hNum}\n` +
+                      `👤 *الاسم:* ${name}\n` +
+                      `💰 *المبلغ:* ${amount}\n` +
+                      `📅 *التاريخ:* ${date}`;
+
+        } else if (currentType === 'bank') {
+            const type = document.getElementById('transactionType').value;
+            const rNum = document.getElementById('receiptNum').value || "لا يوجد";
+            const hNum = document.getElementById('houseNum').value;
+            const amount = document.getElementById('amount').value;
+            
+            if(!hNum || !amount) { tg.showAlert("رقم الدار والمبلغ مطلوبان!"); return; }
+
+            caption = `🏦 *وصل مصرف*\n\n` +
+                      `📌 *النوع:* ${type}\n` +
+                      `🔢 *رقم الوصل:* ${rNum}\n` +
+                      `🏠 *رقم الدار:* ${hNum}\n` +
+                      `👤 *الاسم:* ${name}\n` +
+                      `💰 *المبلغ:* ${amount}\n` +
+                      `📅 *التاريخ:* ${date}`;
+
+        } else if (currentType === 'expense') {
+            const hNum = document.getElementById('houseNum').value || "عام";
+            const reason = document.getElementById('reason').value;
+            const amount = document.getElementById('amount').value;
+            
+            if(!reason || !amount) { tg.showAlert("سبب الصرف والمبلغ مطلوبان!"); return; }
+
+            caption = `💸 *مصاريف*\n\n` +
+                      `🏠 *رقم الدار:* ${hNum}\n` +
+                      `👤 *الاسم:* ${name}\n` +
+                      `📝 *السبب:* ${reason}\n` +
+                      `💰 *المبلغ:* ${amount}\n` +
+                      `📅 *التاريخ:* ${date}`;
         }
 
+        // عملية الإرسال
+        const btn = document.getElementById("btn");
+        const status = document.getElementById("status");
+        
         btn.disabled = true;
         btn.innerText = "جاري الرفع...";
         status.style.display = "block";
 
-        const caption = `${typeTag}\n\n👤 *الاسم:* ${name}\n💰 *المبلغ:* ${amount}\n📝 *التفاصيل:* ${details}`;
-        
         const formData = new FormData();
         formData.append("chat_id", CHAT_ID);
         formData.append("caption", caption);
+        formData.append("photo", photoInput);
         formData.append("parse_mode", "Markdown");
 
-        // إذا أكو صورة، نستخدم sendPhoto، إذا ماكو نستخدم sendMessage
-        let url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-        if (photoInput) {
-            url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-            formData.append("photo", photoInput);
-        } else {
-            formData.append("text", caption); // في حال رسالة نصية فقط
-        }
-
-        fetch(url, { method: "POST", body: formData })
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: formData
+        })
         .then(res => res.json())
         .then(data => {
             if (data.ok) {
-                tg.showAlert("تم الحفظ بنجاح! ✅");
-                showMenu(); // نرجع للقائمة الرئيسية
+                tg.showAlert("تم الإرسال بنجاح! ✅");
+                showMenu(); // الرجوع للقائمة بعد النجاح
             } else {
-                alert("خطأ: " + data.description);
+                tg.showAlert("حدث خطأ في الإرسال: " + data.description);
             }
         })
         .catch(err => {
-            alert("فشل الاتصال: " + err);
+            tg.showAlert("فشل الاتصال بالإنترنت!");
         })
         .finally(() => {
             btn.disabled = false;
