@@ -41,18 +41,16 @@
 
         label { font-weight: bold; font-size: 14px; margin-bottom: 5px; display: block; color: #333; }
         
-        /* تنسيق الحقول - حل مشكلة اختفاء المؤشر */
+        /* تنسيق الحقول */
         input, textarea {
             width: 100%; padding: 14px;
             border: 1px solid #ccc; border-radius: 12px;
             box-sizing: border-box;
             font-size: 16px; margin-bottom: 15px;
-            
-            /* إجبار الألوان لتكون واضحة (أسود على أبيض) */
             background-color: #ffffff !important; 
             color: #000000 !important;
-            caret-color: #000000 !important; /* لون المؤشر أسود */
-            -webkit-text-fill-color: #000000 !important; /* للايفون */
+            caret-color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }
         
         /* تمييز حقل المبلغ */
@@ -91,10 +89,11 @@
     <input type="hidden" id="type" value="مصاريف">
 
     <label>المبلغ (دينار):</label>
-    <input type="text" id="amount" placeholder="0" inputmode="numeric" oninput="formatInput(this)">
+    <!-- تم تفعيل الكتابة بالعربي والانجليزي -->
+    <input type="text" id="amount" placeholder="0" inputmode="decimal" oninput="formatInput(this)">
 
     <label>رقم الدار (اختياري):</label>
-    <input type="number" id="houseNum" placeholder="مثلاً: 15" inputmode="numeric">
+    <input type="text" id="houseNum" placeholder="مثلاً: 15, 16">
 
     <label>الاسم (مطلوب):</label>
     <input type="text" id="name">
@@ -145,12 +144,26 @@
         }
     }
 
+    // دالة لتحويل الأرقام العربية إلى إنجليزية
+    function toEnglishDigits(str) {
+        return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+                  .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    }
+
+    // دالة تنسيق الأرقام (تدعم العربي والإنجليزي)
     function formatInput(input) {
-        let val = input.value.replace(/[^0-9]/g, '');
+        // أول شي نحول الأرقام العربية الى انجليزية حتى الكود يفهمها
+        let val = toEnglishDigits(input.value);
+        
+        // نحذف أي شي مو رقم
+        val = val.replace(/[^0-9]/g, '');
+        
         if (val === '') {
             input.value = '';
             return;
         }
+        
+        // نضيف الفواصل
         input.value = parseInt(val).toLocaleString('en-US');
     }
 
@@ -179,15 +192,14 @@
         const status = document.getElementById("status");
         
         const type = document.getElementById('type').value;
-        
-        // 🔥 هنا التعديل: نأخذ القيمة كما هي (فارغة إذا لم يكتب شيئاً)
-        // لن نرسل "عام" إلى الويب هوك، بل قيمة فارغة
         const hNum = document.getElementById('houseNum').value; 
-        
         const name = document.getElementById('name').value;
         const reason = document.getElementById('reason').value;
-        // تنظيف المبلغ من الفواصل قبل الإرسال
-        const cleanAmount = document.getElementById('amount').value.replace(/,/g, '');
+        
+        // تنظيف المبلغ من الفواصل وتحويل الأرقام العربية اذا وجدت
+        let amountVal = document.getElementById('amount').value;
+        amountVal = toEnglishDigits(amountVal).replace(/,/g, '');
+        
         const date = document.getElementById("date").value;
         const photoInput = document.getElementById("photo").files[0];
 
@@ -197,10 +209,10 @@
 
         const formData = new FormData();
         formData.append("type", type);
-        formData.append("houseNum", hNum); // يروح فارغ اذا ما انكتب شي
+        formData.append("houseNum", hNum);
         formData.append("name", name);
         formData.append("reason", reason);
-        formData.append("amount", cleanAmount);
+        formData.append("amount", amountVal);
         formData.append("date", date);
         
         let targetChatId = ADMIN_CHAT_ID;
@@ -218,9 +230,7 @@
         const isIncome = (type === "داخل");
         const emoji = isIncome ? "📥" : "💸";
         const title = isIncome ? "قبض (ايرادات)" : "سند صرف";
-        const viewAmount = parseInt(cleanAmount).toLocaleString('en-US');
-        
-        // للتلكرام فقط: اذا الدار فارغة نكتب "عام" للترتيب، أو نعوفها فارغة
+        const viewAmount = parseInt(amountVal).toLocaleString('en-US');
         const houseText = hNum ? hNum : "عام"; 
 
         const tgCaption = `${emoji} *${title}*\n\n🏠 *الدار:* ${houseText}\n👤 *الاسم:* ${name}\n📝 *التفاصيل:* ${reason}\n💰 *المبلغ:* ${viewAmount}\n📅 *التاريخ:* ${date}`;
