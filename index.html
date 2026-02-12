@@ -2,53 +2,100 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>نظام الصندوق</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #000);
-            padding: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .container { width: 100%; max-width: 400px; }
-        
-        label { font-weight: bold; font-size: 14px; margin-bottom: 5px; display: block; color: var(--tg-theme-hint-color, #555); }
-        input, textarea, select {
-            width: 100%; padding: 12px;
-            border: 1px solid #ccc; border-radius: 8px;
-            box-sizing: border-box;
-            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000);
+
+        /* تنسيق التابات (الأزرار العلوية) */
+        .tabs {
+            display: flex;
+            background: #e0e0e0;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
             font-size: 16px;
-            margin-bottom: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            color: #555;
+            transition: all 0.3s;
         }
+        /* الألوان عند التفعيل */
+        .tab.active-expense { background-color: #e74c3c; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .tab.active-income { background-color: #2ecc71; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        label { font-weight: bold; font-size: 14px; margin-bottom: 5px; display: block; color: #555; }
+        
+        /* تكبير حقل المبلغ */
+        input, textarea {
+            width: 100%; padding: 14px;
+            border: 1px solid #ccc; border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px; margin-bottom: 15px;
+            background: white;
+        }
+        
+        /* تمييز حقل المبلغ */
+        #amount {
+            font-size: 24px; /* خط كبير */
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 1px;
+            color: #333;
+        }
+
+        /* زر الإرسال */
         .submit-btn {
-            width: 100%; padding: 14px; margin-top: 10px;
-            background-color: #2481cc;
-            color: white; border: none; border-radius: 8px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
+            width: 100%; padding: 16px;
+            color: white; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            transition: background 0.3s;
         }
+
+        /* تغيير ألوان الحدود والزر حسب النوع */
+        .theme-expense #amount:focus { border-color: #e74c3c; box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2); }
+        .theme-expense .submit-btn { background-color: #e74c3c; }
+
+        .theme-income #amount:focus { border-color: #2ecc71; box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2); }
+        .theme-income .submit-btn { background-color: #2ecc71; }
+
     </style>
 </head>
-<body>
+<body class="theme-expense"> <!-- نبدأ بالمصاريف افتراضياً -->
 
 <div class="container">
-    <h3 style="text-align: center; margin-bottom: 20px;">تسجيل حركة الصندوق 📊</h3>
     
-    <label>نوع العملية:</label>
-    <select id="type">
-        <option value="مصاريف">💸 مصاريف (صرف)</option>
-        <option value="داخل">📥 ايرادات (داخل)</option>
-    </select>
+    <!-- التابات -->
+    <div class="tabs">
+        <div class="tab active-expense" id="tab-expense" onclick="setMode('expense')">💸 مصاريف</div>
+        <div class="tab" id="tab-income" onclick="setMode('income')">📥 ايرادات (داخل)</div>
+    </div>
+
+    <!-- حقل مخفي لحفظ النوع -->
+    <input type="hidden" id="type" value="مصاريف">
+
+    <label>المبلغ (دينار):</label>
+    <!-- inputmode="numeric" هو اللي يفتح كيبورد الأرقام -->
+    <input type="text" id="amount" placeholder="0" inputmode="numeric" oninput="formatInput(this)">
 
     <label>رقم الدار (اختياري):</label>
-    <input type="number" id="houseNum" placeholder="اتركه فارغ اذا ماكو">
+    <input type="number" id="houseNum" placeholder="مثلاً: 15" inputmode="numeric">
 
     <label>الاسم (مطلوب):</label>
     <input type="text" id="name">
@@ -56,27 +103,21 @@
     <label>التفاصيل / السبب:</label>
     <textarea id="reason" rows="2"></textarea>
 
-    <label>المبلغ (مطلوب):</label>
-    <input type="number" id="amount">
-
     <label>التاريخ:</label>
     <input type="date" id="date">
 
     <label>صورة الوصل (اختياري):</label>
     <input type="file" id="photo" accept="image/*">
 
-    <button class="submit-btn" onclick="confirmData()" id="btn">مراجعة وإرسال 📤</button>
+    <button class="submit-btn" id="btn" onclick="confirmData()">تسجيل مصاريف 📤</button>
     <p id="status" style="text-align: center; display: none; margin-top: 10px; color: #666;">جاري التنفيذ...</p>
+
 </div>
 
 <script>
     // ==========================================
-    // 🔗 رابط الويب هوك
     const N8N_URL = "https://hrh1.app.n8n.cloud/webhook/d4aec281-2a05-4f6c-8377-daec61dd258f"; 
-    
-    // معلومات البوت
     const BOT_TOKEN = "8134873765:AAFUo-nFXTbmN4_KC2NQQbMXjfEFUxO2s_o"; 
-    // ملاحظة: الـ CHAT_ID هنا صار ما اله داعي لأن الرد راح يصير ديناميكي، بس نبقيه للاحتياط
     const ADMIN_CHAT_ID = "5762584781"; 
     // ==========================================
 
@@ -84,38 +125,80 @@
     tg.expand();
     document.getElementById('date').valueAsDate = new Date();
 
-    function confirmData() {
-        const typeSelect = document.getElementById('type');
-        const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+    // 1. دالة التبديل بين المصاريف والايرادات
+    function setMode(mode) {
+        const body = document.body;
+        const btn = document.getElementById('btn');
+        const typeInput = document.getElementById('type');
         
-        const name = document.getElementById('name').value;
-        const reason = document.getElementById('reason').value;
-        const amount = document.getElementById('amount').value;
-        const date = document.getElementById("date").value;
-
-        if (!name || !reason || !amount) { 
-            tg.showAlert("⚠️ يرجى ملء الاسم، التفاصيل، والمبلغ!"); 
-            return; 
+        // تغيير التابات
+        document.getElementById('tab-expense').className = mode === 'expense' ? 'tab active-expense' : 'tab';
+        document.getElementById('tab-income').className = mode === 'income' ? 'tab active-income' : 'tab';
+        
+        // تغيير الثيم والقيم
+        if (mode === 'expense') {
+            body.className = 'theme-expense';
+            typeInput.value = 'مصاريف';
+            btn.innerText = 'تسجيل مصاريف 📤';
+            btn.style.backgroundColor = '#e74c3c';
+        } else {
+            body.className = 'theme-income';
+            typeInput.value = 'داخل';
+            btn.innerText = 'تسجيل ايرادات 📥';
+            btn.style.backgroundColor = '#2ecc71';
         }
-
-        const confirmMsg = `نوع العملية: ${typeText}\n\n👤 الاسم: ${name}\n💰 المبلغ: ${amount}\n📝 التفاصيل: ${reason}\n📅 التاريخ: ${date}`;
-
-        tg.showConfirm(confirmMsg, function(isConfirmed) {
-            if (isConfirmed) {
-                performUpload();
-            }
-        });
     }
 
+    // 2. دالة تنسيق الأرقام مع الفواصل (أهم جزء)
+    function formatInput(input) {
+        // حذف أي حرف غير رقمي
+        let val = input.value.replace(/[^0-9]/g, '');
+        
+        if (val === '') {
+            input.value = '';
+            return;
+        }
+        
+        // تحويل النص لرقم وإضافة الفواصل
+        // نستخدم toLocaleString ليضيف الفواصل مثل 1,000,000
+        input.value = parseInt(val).toLocaleString('en-US');
+    }
+
+    // 3. دالة التأكيد
+    function confirmData() {
+        const type = document.getElementById('type').value;
+        const typeDisplay = type === 'مصاريف' ? '💸 مصاريف' : '📥 ايرادات';
+        const rawAmount = document.getElementById('amount').value;
+        const name = document.getElementById('name').value;
+        const reason = document.getElementById('reason').value;
+        const date = document.getElementById("date").value;
+
+        if (!name || !reason || !rawAmount) {
+            tg.showAlert("⚠️ يرجى ملء المبلغ والاسم والتفاصيل!");
+            return;
+        }
+
+        tg.showConfirm(
+            `هل البيانات صحيحة؟\n\n📌 النوع: ${typeDisplay}\n💰 المبلغ: ${rawAmount}\n👤 الاسم: ${name}\n📝 التفاصيل: ${reason}`,
+            function(ok) {
+                if (ok) performUpload();
+            }
+        );
+    }
+
+    // 4. دالة الرفع
     function performUpload() {
         const btn = document.getElementById("btn");
         const status = document.getElementById("status");
         
-        const type = document.getElementById('type').value; 
+        const type = document.getElementById('type').value;
         const hNum = document.getElementById('houseNum').value || "عام";
         const name = document.getElementById('name').value;
         const reason = document.getElementById('reason').value;
-        const amount = document.getElementById('amount').value;
+        
+        // ⚠️ مهم: لازم نشيل الفواصل قبل ما ندز الرقم لـ n8n حتى يفهمه كرقم
+        const cleanAmount = document.getElementById('amount').value.replace(/,/g, '');
+        
         const date = document.getElementById("date").value;
         const photoInput = document.getElementById("photo").files[0];
 
@@ -123,41 +206,40 @@
         btn.innerText = "جاري الإرسال...";
         status.style.display = "block";
 
-        // === 1. إرسال لـ n8n ===
+        // === تجهيز بيانات n8n ===
         const formData = new FormData();
         formData.append("type", type);
         formData.append("houseNum", hNum);
         formData.append("name", name);
         formData.append("reason", reason);
-        formData.append("amount", amount);
+        formData.append("amount", cleanAmount); // نرسل الرقم صافي (بدون فواصل)
         formData.append("date", date);
         
-        // 🔥 هنا السحر: نسحب آيدي الشخص اللي فاتح البوت
-        let userChatId = ADMIN_CHAT_ID; // الافتراضي هو الآدمن
-        
+        // سحب بيانات المستخدم
+        let targetChatId = ADMIN_CHAT_ID;
         if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
              formData.append("sender_name", tg.initDataUnsafe.user.first_name);
              formData.append("sender_username", tg.initDataUnsafe.user.username);
-             
-             // نرسل الآيدي لـ n8n
              formData.append("user_id", tg.initDataUnsafe.user.id);
-             userChatId = tg.initDataUnsafe.user.id; // نستخدمه ايضاً للإرسال المباشر
+             targetChatId = tg.initDataUnsafe.user.id;
         }
 
         if (photoInput) {
             formData.append("photo", photoInput);
         }
 
-        // === 2. إرسال لـ Telegram (نسخة فورية للشات) ===
+        // === تجهيز بيانات التلكرام ===
         const isIncome = (type === "داخل");
         const emoji = isIncome ? "📥" : "💸";
         const title = isIncome ? "قبض (ايرادات)" : "سند صرف";
+        
+        // هنا نعرض الرقم بالفواصل بالرسالة عشان ينقرأ بسهولة
+        const viewAmount = parseInt(cleanAmount).toLocaleString('en-US');
 
-        const tgCaption = `${emoji} *${title}*\n\n🏠 *الدار:* ${hNum}\n👤 *الاسم:* ${name}\n📝 *التفاصيل:* ${reason}\n💰 *المبلغ:* ${amount}\n📅 *التاريخ:* ${date}`;
+        const tgCaption = `${emoji} *${title}*\n\n🏠 *الدار:* ${hNum}\n👤 *الاسم:* ${name}\n📝 *التفاصيل:* ${reason}\n💰 *المبلغ:* ${viewAmount}\n📅 *التاريخ:* ${date}`;
         
         const telegramData = new FormData();
-        // نرسل الرسالة للشخص اللي فاتح البوت
-        telegramData.append("chat_id", userChatId); 
+        telegramData.append("chat_id", targetChatId);
         telegramData.append("parse_mode", "Markdown");
         
         let tgApiMethod = "sendMessage";
@@ -169,6 +251,7 @@
             telegramData.append("text", tgCaption);
         }
 
+        // إرسال مزدوج
         Promise.all([
             fetch(N8N_URL, { method: "POST", body: formData }),
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${tgApiMethod}`, { method: "POST", body: telegramData })
@@ -178,7 +261,7 @@
                 tg.showAlert("✅ تم الحفظ بنجاح!");
                 tg.close();
             } else {
-                tg.showAlert("⚠️ فشل الاتصال بالنظام (n8n)!");
+                tg.showAlert("⚠️ تم الإرسال للشات، لكن فشل التخزين في النظام!");
             }
         })
         .catch(error => {
@@ -187,7 +270,7 @@
         })
         .finally(() => {
             btn.disabled = false;
-            btn.innerText = "مراجعة وإرسال 📤";
+            btn.innerText = "إرسال 📤";
             status.style.display = "none";
         });
     }
@@ -195,17 +278,5 @@
 
 </body>
 </html>
-
-الخطوة الثانية: تعديل n8n (حتى يندز الرد للشخص الصح)
-هسه بعد ما الفورمة صارت تدز user_id، لازم تخلي n8n يستخدمه.
- * افتح عقدة Telegram بـ n8n.
- * روح لحقل Chat ID.
- * إذا جان "Fixed"، حوله إلى Expression (علامة الترس).
- * امسح الرقم الثابت.
- * من القائمة اليسرى (Input Data)، دور على الحقل الجديد اللي اسمه user_id واسحبه للمربع.
-   (ملاحظة: إذا ما طلعلك الحقل، لازم تشغل الفورمة مرة وحدة بالكود الجديد حتى n8n يشوف البيانات الجديدة).
-   أو اكتب هذا الكود مباشرة:
-   {{ $json.body.user_id }}
-
 
 
